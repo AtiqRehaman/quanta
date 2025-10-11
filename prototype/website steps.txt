@@ -1,0 +1,16 @@
+steps to run websites
+1.new terminal tisukoni 
+2. path evali 
+3.cd to backend
+4.we need to activate venv(environment)
+5.path ki we need to add .\venv\Scripts\Activate.ps1
+6.by this (venv)ps c:\.... path vastudi
+7.ela vachindi ante activate aindi ani 
+8.now
+9.backend lo una app.py ana dani run cheyali first 
+10.by this step backend start avtudi i mean server run avutudi 
+11. now take new terminal again 
+12.checking the path
+13.cd to frontend
+14.npm start
+15.website runs successfully yay!

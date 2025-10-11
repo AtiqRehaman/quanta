@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Processor</title>
+    
+</head>
+<body>
+    <form action="http://127.0.0.1:5000/process_image" method="POST" enctype="multipart/form-data">
+        <label for="image">Upload Image:</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg" required><br>
+        <label for="use_noise">Use Noise:</label>
+        <input type="checkbox" name="use_noise" value="1"><br>
+        <button type="submit">Process Image</button>
+    </form>
+</body>
+</html>

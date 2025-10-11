@@ -1,0 +1,16 @@
+# Core quantum framework
+qiskit
+qiskit-aer
+
+# Image processing
+opencv-python
+Pillow
+scikit-image
+scipy
+
+# Math & data handling
+numpy
+matplotlib
+
+# Optional: Jupyter display helpers (if you plan to run in notebooks)
+ipython
