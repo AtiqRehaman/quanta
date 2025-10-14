@@ -53,16 +53,18 @@ The project includes:
 ```bash
    git clone https://github.com/<your-username>/Hybrid\_Image\_Transmission.git
    cd Hybrid\_Image\_Transmission/backend
+```
 
 2. Create a virtual environment and install dependencies:
-
-2. Create a virtual environment and install dependencies:
+```bash
    python -m venv venv
    source venv/bin/activate  # or venv\\Scripts\\activate (Windows)
    pip install -r requirements.txt
+```
 3. Run the backend API:
+```bash
    python app.py
-
+```
 ### 🔹 Frontend (React)
 
 1. Open another terminal:
