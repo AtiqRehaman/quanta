@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
-from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim
+from skimage.metrics import structural_similarity as ssim
 
 plt.rcParams.update({
     # "figure.figsize": (4, 3),       # Default single-column figure size in inches
@@ -26,7 +25,7 @@ def plot_histogram(diff):
     plt.title('Histogram of Pixel Values')
     # plt.savefig('histogram.png', dpi=300)
     # plt.show()
-    
+    # plt.close()
     
 def error_heatmap(diff):
 
@@ -36,6 +35,8 @@ def error_heatmap(diff):
     plt.axis("off")
     # plt.savefig('heat_map.png', dpi=300, bbox_inches='tight')
     # plt.show()
+    # plt.close()
+
 
 def block_mse(orig, recon, block_size=8):
     h, w = orig.shape
@@ -57,22 +58,40 @@ def psnr_ssim_plots(color_cropped, reconstructed):
     # Ensure images are in correct format
     color_cropped = np.array(color_cropped, dtype=np.uint8)
     reconstructed = np.array(reconstructed, dtype=np.uint8)
-    
-    # Calculate PSNR
-    psnr_value = psnr(color_cropped, reconstructed, data_range=255)
+    # Calculate PSNR safely to avoid divide-by-zero warnings
+    # Compute MSE over all channels
+    mse = np.mean((color_cropped.astype(np.float64) - reconstructed.astype(np.float64)) ** 2)
+    if mse == 0:
+        psnr_value = float(100.0)  # Perfect match
+    else:
+        psnr_value = 10 * np.log10((255.0 ** 2) / mse)
     
     # Calculate SSIM
-    ssim_value = ssim(
-    color_cropped,
-    reconstructed,
-    win_size=7,
-    gaussian_weights=True,
-    sigma=1.5,
-    channel_axis=2,
-    data_range=255,
-    K1=0.01, K2=0.03
+    ssim_raw = ssim(
+        color_cropped,
+        reconstructed,
+        win_size=7,
+        gaussian_weights=True,
+        sigma=1.5,
+        channel_axis=2,
+        data_range=255,
+        K1=0.01,
+        K2=0.03,
     )
+
+    # ssim() may return a scalar or a tuple (score, full_map). Handle both.
+    if isinstance(ssim_raw, tuple):
+        ssim_value = ssim_raw[0]
+    else:
+        ssim_value = ssim_raw
     
+    # Ensure numeric scalars for plotting
+    psnr_value = float(psnr_value)
+    try:
+        ssim_value = float(np.asarray(ssim_value).item())
+    except Exception:
+        ssim_value = float(ssim_value)
+
     # Plot PSNR and SSIM
     plt.figure()
     plt.bar(["PSNR", "SSIM"], [psnr_value, ssim_value], color=["orange", "green"])
@@ -84,7 +103,7 @@ def psnr_ssim_plots(color_cropped, reconstructed):
     
     print(f"PSNR: {psnr_value} dB")
     print(f"SSIM: {ssim_value}")
-    
+
     return (psnr_value, ssim_value)
     
 
@@ -134,8 +153,8 @@ def plot_bandwidth_scaling(image_sizes, block_size=16, entropy_fraction=0.15):
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('bandwidth_scaling.png', dpi=300)
-    plt.show()
+    # plt.savefig('bandwidth_scaling.png', dpi=300)
+    # plt.show()
 
 # plot_bandwidth_scaling([128, 256, 512])
 

@@ -60,6 +60,23 @@ def build_noise_model(p1=0.01, p2=0.02, p_meas=0.01):
     read_error = [[1 - p_meas, p_meas], [p_meas, 1 - p_meas]]
     nm.add_all_qubit_readout_error(ReadoutError(read_error))
     return nm
+  
+def build_noise_model_ser(prob=0.3):
+    """
+    Build a simple depolarizing + readout noise model.
+    p1: single-qubit depolarizing prob
+    p2: two-qubit depolarizing prob
+    p_meas: measurement error probability (symmetric)
+    """
+    nm = NoiseModel()
+    e1 = depolarizing_error(prob, 1)
+    e2 = depolarizing_error(prob, 2)
+    nm.add_all_qubit_quantum_error(e1, ['x','z','h'])  # common single-qubit gate names
+    nm.add_all_qubit_quantum_error(e2, ['cx'])
+    # Simple symmetric readout error: flips 0<->1 with p_meas
+    read_error = [[1 - prob, prob], [prob, 1 - prob]]
+    nm.add_all_qubit_readout_error(ReadoutError(read_error))
+    return nm
 
 def transmit_bit_pairs(bit_pairs, circuits, shots_per_pair=200, noise_model=None, backend=None, batch_size=16):
     """

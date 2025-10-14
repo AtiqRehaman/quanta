@@ -18,6 +18,7 @@ import {
   ListItem,
   ListItemText,
   Alert,
+  Slider,
 } from "@mui/material";
 
 function Demo() {
@@ -25,6 +26,7 @@ function Demo() {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageInfo, setImageInfo] = useState(null);
   const [useNoise, setUseNoise] = useState(false);
+  const [noisePercentage, setNoisePercentage] = useState(50); // New state for noise percentage
   const [loading, setLoading] = useState(false);
   const [resultImages, setResultImages] = useState([]);
   const [metrics, setMetrics] = useState(null);
@@ -157,6 +159,9 @@ function Demo() {
     const formData = new FormData();
     formData.append("image", image);
     formData.append("use_noise", useNoise ? "true" : "false");
+    if (useNoise) {
+      formData.append("noise_percentage", noisePercentage / 100); // Send as decimal (0 to 1)
+    }
 
     setLoading(true);
     setError(null);
@@ -176,7 +181,7 @@ function Demo() {
       const uploadStart = Date.now();
       const res = await axios.post("http://127.0.0.1:5000/process_image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 300000, // 5 minutes
+        timeout: 500000, // 5 minutes
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setProgress(percentCompleted);
@@ -297,6 +302,24 @@ function Demo() {
               }
               label="Use Noise"
             />
+            {useNoise && (
+              <Box sx={{ mt: 2, maxWidth: 300, margin: "auto" }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Noise Percentage
+                </Typography>
+                <Slider
+                  value={noisePercentage}
+                  onChange={(e, value) => setNoisePercentage(value)}
+                  aria-labelledby="noise-percentage-slider"
+                  valueLabelDisplay="auto"
+                  step={1}
+                  marks
+                  min={0}
+                  max={100}
+                  disabled={loading}
+                />
+              </Box>
+            )}
           </Box>
           <Button
             type="submit"

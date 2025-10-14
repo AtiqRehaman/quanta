@@ -23,8 +23,9 @@ helper = Helper()
 # Main function
 # -------------------------------
 image_path = "C:/Hybrid_Image/backend/images/sample_cube1.png"
-# noise_params=(0.2, 0.3, 0.2) # (p1, p2, p_meas)
-noise_params=(0, 0, 0) # (p1, p2, p_meas)
+noise_params=(0.3, 0.2, 0.3) # (p1, p2, p_meas)
+# noise_params=None # (p1, p2, p_meas)
+# noise_params = (0.3, 0.4, 0.3)
 # -------------------------------
 # Load image
 # -------------------------------
@@ -61,9 +62,12 @@ top_blocks = sorted(scores, reverse=True)[:k]
 classical_image = image_utils.mask_classical_blocks(color_cropped, top_blocks, block_size=block_size)
 
 quantum_image = np.zeros_like(color_cropped, dtype=np.uint8)
+if noise_params is not None:
+    nm = super_dense.build_noise_model(*noise_params)
+else:
+    nm = None
 
-nm = super_dense.build_noise_model(*noise_params)
-backend = AerSimulator(noise_model=nm)
+backend = AerSimulator()
 circuits = super_dense.superdense_circuit_for_message()
 
 quantum_reconstructed_blocks = {}
@@ -120,29 +124,34 @@ quantum_image = reconstruct.reconstruct_quantum_image(
     quantum_reconstructed_blocks, image_shape=color_cropped.shape, block_size=block_size
 )
 
-quantum_denoised = quantum_image.copy()
-for _, i, j in top_blocks:
-    y = i * block_size
-    x = j * block_size
-    # Apply denoising only to quantum blocks
-    block = quantum_image[y:y+block_size, x:x+block_size]
-    denoised_block = cv2.fastNlMeansDenoisingColored(block, None, 10, 10, 7, 21)
-    quantum_denoised[y:y+block_size, x:x+block_size] = denoised_block
+# quantum_denoised = quantum_image.copy()
+# for _, i, j in top_blocks:
+#     y = i * block_size
+#     x = j * block_size
+#     # Apply denoising only to quantum blocks
+#     block = quantum_image[y:y+block_size, x:x+block_size]
+#     denoised_block = cv2.fastNlMeansDenoisingColored(block, None, 10, 10, 7, 21)
+#     quantum_denoised[y:y+block_size, x:x+block_size] = denoised_block
     
 reconstructed = reconstruct.reconstruct_full_image(
-    metadata_full, classical_image, quantum_denoised, block_size=block_size 
+    metadata_full, classical_image, quantum_image, block_size=block_size
 )
 
 # -------------------------------
 # Save outputs
 # -------------------------------
-classical_resized = cv2.resize(classical_image, (org_w, org_h), interpolation=cv2.INTER_CUBIC)
-quantum_resized   = cv2.resize(quantum_image, (org_w, org_h), interpolation=cv2.INTER_CUBIC)
-reconstructed_resized = cv2.resize(reconstructed, (org_w, org_h), interpolation=cv2.INTER_CUBIC)
+# classical_resized = cv2.resize(classical_image, (org_w, org_h), interpolation=cv2.INTER_CUBIC)
+# quantum_resized   = cv2.resize(quantum_image, (org_w, org_h), interpolation=cv2.INTER_CUBIC)
+# reconstructed_resized = cv2.resize(reconstructed, (org_w, org_h), interpolation=cv2.INTER_CUBIC)
 
-cv2.imwrite('meta_classical_transmission.png', classical_resized)
-cv2.imwrite('meta_sdc_transmission.png', quantum_resized)
-cv2.imwrite('meta_reconstructed.png', reconstructed_resized)
+cv2.imwrite('meta_classical_transmission.png', classical_image)
+cv2.imwrite('meta_sdc_transmission.png', quantum_image)
+cv2.imwrite('meta_reconstructed.png', reconstructed)
+
+# Coincidence counter
+coincidences = np.sum(image == reconstructed)
+total = color_cropped.size
+coincidence_rate = coincidences / total
 
 print(f"Classical image size:{np.count_nonzero(classical_image)}")
 print(f"Quantum image size:{np.count_nonzero(quantum_image)}")
@@ -152,27 +161,29 @@ diff = cv2.absdiff(color_cropped, reconstructed)
 diff_gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
 plotting.plot_histogram(diff_gray)
 plotting.error_heatmap(diff_gray)
-fidelity = plotting.psnr_ssim_plots(color_cropped, reconstructed)
-print("Image Fidelity (SSIM):", fidelity)
+# fidelity = plotting.psnr_ssim_plots(color_cropped, reconstructed)
+# print("Image Fidelity (SSIM):", fidelity)
+fidelity = coincidence_rate * 100 if total > 0 else 0.0
+print("Image Fidelity (Coincidence counter):", fidelity)
 
 # plotting.plot_bandwidth_scaling([256, 512, 1024, 2048], block_size=16, entropy_fraction=0.15)
 
-plt.style.use('seaborn-v0_8-white')
-fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+# plt.style.use('seaborn-v0_8-white')
+# fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-axes[0].imshow(reconstructed_resized)
-axes[0].set_title('Reconstructed Image')
-axes[0].axis('off')
+# axes[0].imshow(reconstructed_resized)
+# axes[0].set_title('Reconstructed Image')
+# axes[0].axis('off')
 
-# Heatmap with proper color scaling
-im = axes[1].imshow(diff_gray, cmap='hot', vmin=0, vmax=50)
-axes[1].set_title('Error Heatmap (Original vs Hybrid)')
-axes[1].axis('off')
+# # Heatmap with proper color scaling
+# im = axes[1].imshow(diff_gray, cmap='hot', vmin=0, vmax=50)
+# axes[1].set_title('Error Heatmap (Original vs Hybrid)')
+# axes[1].axis('off')
 
-# # Add shared colorbar
-# cbar = fig.colorbar(im, ax=axes.ravel().tolist(), orientation='horizontal', fraction=0.05, pad=0.05)
-# cbar.set_label('Error Intensity')
+# # # Add shared colorbar
+# # cbar = fig.colorbar(im, ax=axes.ravel().tolist(), orientation='horizontal', fraction=0.05, pad=0.05)
+# # cbar.set_label('Error Intensity')
 
-plt.tight_layout()
-plt.savefig('recon_heatmap_sidebyside.png', dpi=300, bbox_inches='tight')
-plt.show()
+# plt.tight_layout()
+# plt.savefig('recon_heatmap_sidebyside.png', dpi=300, bbox_inches='tight')
+# plt.show()

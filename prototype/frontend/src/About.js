@@ -1,89 +1,139 @@
-import React, { useState } from "react";
+// import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Container, Grid, Card, CardContent, Typography, Button, Box } from "@mui/material";
 import "./App.css";
+import dvMp4 from './assets/dv.mp4';
 
 function About() {
-  const [openIndex, setOpenIndex] = useState(null);
   const navigate = useNavigate();
+  // const [currentTime, setCurrentTime] = useState(new Date());
+
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     setCurrentTime(new Date());
+  //   }, 1000); // Update every second
+  //   return () => clearInterval(timer); // Cleanup on unmount
+  // }, []);
 
   const cards = [
     {
       title: "Superdense Coding",
       short: "Quantum technique allowing two classical bits to be sent using one qubit.",
-      long: "Superdense Coding is a fundamental quantum communication protocol that exploits the phenomenon of quantum entanglement to enhance information transfer efficiency. In this scheme, an entangled qubit pair is pre-shared between the sender and receiver. By applying one of four distinct unitary operations to their qubit, the sender can encode two classical bits of information into a single qubit. Upon transmission, the receiver performs a joint measurement on the two entangled qubits to decode the message."
+      long: "Superdense Coding is a fundamental quantum communication protocol that exploits quantum entanglement to enhance information transfer efficiency. An entangled qubit pair is pre-shared, and the sender encodes two classical bits into a single qubit using unitary operations. The receiver decodes the message with a joint measurement."
     },
     {
-      title: "Problem Statement",
-      short: "Transmitting images efficiently across hybrid (quantum + classical) networks.",
-      long: "Classical communication networks often encounter bandwidth and performance limitations when transmitting large or complex datasets, particularly high-entropy information such as detailed images or videos. Quantum communication, in contrast, provides exceptional efficiency, parallelism, and data security by utilizing principles like superposition and entanglement. However, the technology is still in its developmental phase and not yet feasible for complete real-world replacement of classical systems."
+      title: "Video Demonstration",
+      short: "Watch a demo of hybrid quantum-classical transmission."
     },
     {
       title: "Proposed Solution",
-      short: "A hybrid model using block-wise entropy analysis and quantum-assisted transmission.",
-      long: ` The image is divided into small blocks for efficient processing and localized analysis.
- Entropy is calculated for each block to measure its information content.
- High-entropy blocks represent complex and information-rich regions of the image.
- These high-entropy blocks are transmitted using Superdense Coding (SDC) via quantum channels.
- Low-entropy blocks with simple or repetitive data are sent through classical channels.
- This hybrid model combines the strengths of both quantum and classical communication.
- It ensures optimized bandwidth utilization and faster data transfer.
- The approach enhances overall reliability, efficiency, and error resilience across networks.`
+      short: "Hybrid model for efficient image transmission.",
+      long: `The image is divided into small blocks for processing.
+Entropy measures information content per block.
+High-entropy blocks use Superdense Coding via quantum channels.
+Low-entropy blocks use classical channels.
+This combines quantum and classical strengths.
+It optimizes bandwidth and enhances reliability.`
     }
   ];
 
-  const toggleCard = (index) => {
-    setOpenIndex(openIndex === index ? null : index);
+  const handleButtonClick = (title) => {
+    if (title === "Superdense Coding") {
+      navigate("/superdense");
+    }
   };
 
   return (
-    <div className="about-wrap">
-      <div className="about-header">
-        <h1>About Our Project</h1>
-        <p className="about-sub">
-          Hybrid Quantum-Classical Communication for Efficient Image Transmission
-        </p>
-      </div>
+    <Container maxWidth="md" sx={{ py: 6, backgroundColor: "#f5f7fa79", minHeight: "100vh" }}>
+      <Box sx={{ mb: 10, textAlign: "center" }}>
+        <Typography variant="h2" sx={{ fontWeight: 700, color: "#d21919ff" }}>
+          About Our Project
+        </Typography>
+        <Typography variant="subtitle1" sx={{ color: "#cdcdcdff", mt: 1 }}>
+          Innovating Image Transmission with Quantum-Classical Hybrid Technology
+        </Typography>
+      </Box>
 
-      <div className="cards-grid">
+      <Grid container spacing={0} direction="column" alignItems="center">
         {cards.map((card, index) => (
-          <div
-            key={index}
-            className={`card ${openIndex === index ? "is-open" : ""}`}
-          >
-            <div className="card-body">
-              <h3 className="card-title">{card.title}</h3>
-              <p className="card-short">{card.short}</p>
+          <Grid item xs={12} key={index} sx={{ mt: index > 0 ? 10 : 0, maxWidth: 600 }}>
+            <Card sx={{ width: "100%", boxShadow: 3, borderRadius: 2, p: 3 }}>
+              <CardContent sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: "#d6d6d6ff" }}>
+                  {card.title}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: "#e4e4e4ff" }}>
+                  {card.short}
+                </Typography>
 
-              {openIndex === index && (
-                <div className="card-more">
-                  {card.title === "Proposed Solution" ? (
-                    <ul className="card-long">
-                      {card.long.split("\n").map((point, i) => (
-                        <li key={i}>{point.trim()}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="card-long" style={{ whiteSpace: "pre-line" }}>
-                      {card.long}
-                    </p>
-                  )}
-                </div>
-              )}
+                {card.title === "Video Demonstration" && (
+                  <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", position: "relative", mb: 2 }}>
+                    <video
+                      controls
+                      width="100%"
+                      style={{
+                        maxWidth: "100%",
+                        height: "auto",
+                        objectFit: "contain"
+                      }}
+                    >
+                      <source
+                        src={dvMp4}
+                        type="video/mp4"
+                      />
+                      Your browser does not support the video tag.
+                    </video>
+                  </Box>
+                )}
 
-              <button className="card-btn" onClick={() => toggleCard(index)}>
-                {openIndex === index ? "Read Less ▲" : "Read More ▼"}
-              </button>
-            </div>
-          </div>
+                {card.long && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mt: 2,
+                      color: "#444",
+                      flexGrow: 1,
+                      textAlign: card.title === "Proposed Solution" ? "left" : "inherit", // Left align for Proposed Solution
+                    }}
+                  >
+                    {card.title === "Proposed Solution" ? (
+                      <ul style={{ paddingLeft: 20 }}>
+                        {card.long.split("\n").map((point, i) => (
+                          <li key={i} style={{ marginBottom: 8 }}>{point.trim()}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      card.long
+                    )}
+                  </Typography>
+                )}
+
+                {card.title === "Superdense Coding" && (
+                  <Button
+                    variant="contained"
+                    sx={{ mt: 2, backgroundColor: "#1976d2", "&:hover": { backgroundColor: "#1565c0" } }}
+                    onClick={() => handleButtonClick(card.title)}
+                  >
+                    Learn More
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
+      </Grid>
 
-      <div style={{ marginTop: "40px" }}>
-        <button className="card-btn" onClick={() => navigate("/dv")}>
-          Explore More ▶
-        </button>
-      </div>
-    </div>
+      <Box sx={{ mt: 10, textAlign: "center" }}>
+        <Button
+          variant="contained"
+          sx={{ backgroundColor: "#1976d2", "&:hover": { backgroundColor: "#1565c0" }, px: 4, py: 1.5 }}
+          onClick={() => navigate("/demo")}
+        >
+          Get Started
+        </Button>
+      </Box>
+
+    </Container>
   );
 }
 

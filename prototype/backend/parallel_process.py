@@ -1,9 +1,16 @@
+import base64
 from joblib import Parallel, delayed
 import math
 import multiprocessing
 from super_dense import transmit_bit_pairs
 from helper import Helper
 helper = Helper()
+
+
+def encode_to_base64(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+    
 
 def transmit_blocks_in_parallel(block_bitpairs_list, circuits, backend, noise_model, shots_per_pair=200, n_jobs=4, batch_size=50):
     """

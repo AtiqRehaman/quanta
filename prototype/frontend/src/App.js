@@ -6,6 +6,8 @@ import About from "./About";
 import Demo from "./Demo";
 import Dv from "./Dv";
 import "./App.css";
+import Superdense from "./superdense";
+
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
         <Route path="/about" element={<About />} /> 
         <Route path="/dv" element={<Dv />} />
         <Route path="/demo" element={<Demo />} />
+        <Route path="/superdense" element={<Superdense />} />
       </Routes>
 
       {/* 👣 Footer Section */}
