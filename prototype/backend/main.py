@@ -22,13 +22,14 @@ helper = Helper()
 # -------------------------------
 # Main function
 # -------------------------------
-image_path = "C:/Hybrid_Image/backend/images/sample_cube1.png"
-noise_params=(0.3, 0.2, 0.3) # (p1, p2, p_meas)
+image_path = "prototype/backend/images/letter.jpg"
+# noise_params=(0.3, 0.2, 0.3) # (p1, p2, p_meas)
 # noise_params=None # (p1, p2, p_meas)
-# noise_params = (0.3, 0.4, 0.3)
+noise_params = (0.4, 0.6, 0.5)
 # -------------------------------
 # Load image
 # -------------------------------
+start_time = time.time()
 image = cv2.imread(image_path)
 if image is None:
     raise FileNotFoundError(f"Image not found at path: {image_path}")
@@ -87,7 +88,7 @@ for _, i, j in top_blocks:
 
 metadata_full = metadata.metadata(blocks, top_blocks, block_size=block_size)
 
-start_time = time.time()
+
 # Simulate SDC for all bit pairs at once
 print(f"Total bit pairs to transmit: {len(all_bit_pairs)}")
 # received_bit_pairs = super_dense.transmit_bit_pairs(
@@ -148,10 +149,6 @@ cv2.imwrite('meta_classical_transmission.png', classical_image)
 cv2.imwrite('meta_sdc_transmission.png', quantum_image)
 cv2.imwrite('meta_reconstructed.png', reconstructed)
 
-# Coincidence counter
-coincidences = np.sum(image == reconstructed)
-total = color_cropped.size
-coincidence_rate = coincidences / total
 
 print(f"Classical image size:{np.count_nonzero(classical_image)}")
 print(f"Quantum image size:{np.count_nonzero(quantum_image)}")
@@ -161,10 +158,21 @@ diff = cv2.absdiff(color_cropped, reconstructed)
 diff_gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
 plotting.plot_histogram(diff_gray)
 plotting.error_heatmap(diff_gray)
-# fidelity = plotting.psnr_ssim_plots(color_cropped, reconstructed)
-# print("Image Fidelity (SSIM):", fidelity)
-fidelity = coincidence_rate * 100 if total > 0 else 0.0
-print("Image Fidelity (Coincidence counter):", fidelity)
+
+try:
+    # Coincidence counter
+    coincidences = np.sum(image == reconstructed)
+    total = color_cropped.size
+    coincidence_rate = coincidences / total
+    fidelity = coincidence_rate * 100 if total > 0 else 0.0
+    print("Image Fidelity (Coincidence counter):", fidelity)
+except ValueError:
+    # SSIM
+    ssim = plotting.psnr_ssim_plots(color_cropped, reconstructed)[-1]
+    total = color_cropped.size
+    fidelity = ssim * 100 if total > 0 else 0.0
+    print("Image Fidelity (SSIM):", fidelity)
+    
 
 # plotting.plot_bandwidth_scaling([256, 512, 1024, 2048], block_size=16, entropy_fraction=0.15)
 

@@ -82,7 +82,7 @@ def superdense_qiskit(bits: str, shots: int = 1024, noise=False):
 
   # Run with Aer qasm_simulator
   sim = AerSimulator(noise_model=noise_model, method='density_matrix')
-  qc.save_density_matrix()
+#   qc.save_density_matrix()
   tqc = transpile(qc, sim)
   result = sim.run(tqc, shots=shots).result()
   rho = result.data(0)["density_matrix"]
