@@ -5,6 +5,7 @@ import Home from "./Home";
 import About from "./About"; 
 import Demo from "./Demo";
 import Dv from "./Dv";
+import Results from "./results";
 import "./App.css";
 import Superdense from "./superdense";
 
@@ -26,7 +27,8 @@ function App() {
         <div className="nav-links">
           <Link to="/">Home</Link> &nbsp; | &nbsp;
           <Link to="/about">About</Link> &nbsp; | &nbsp;
-          <Link to="/demo">Demo</Link>
+          <Link to="/demo">Demo</Link> &nbsp; | &nbsp;
+          <Link to="/results">Results</Link>
         </div>
       </motion.nav>
 
@@ -37,6 +39,7 @@ function App() {
         <Route path="/dv" element={<Dv />} />
         <Route path="/demo" element={<Demo />} />
         <Route path="/superdense" element={<Superdense />} />
+        <Route path="/results" element={<Results />} />
       </Routes>
 
       {/* 👣 Footer Section */}
