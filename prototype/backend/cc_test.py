@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load image into img1
-img1 = cv2.imread("C:/Hybrid_Image/backend/images/sample_cube1.png")  # Replace 'test.jpg' with your image path
+img1 = cv2.imread("C:/Hybrid_Image/backend/images/sample_cube1.png") 
 
 if img1 is None:
     raise FileNotFoundError("Image not found or path is incorrect.")
