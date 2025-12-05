@@ -25,7 +25,7 @@ helper = Helper()
 image_path = "prototype/backend/images/letter.jpg"
 # noise_params=(0.3, 0.2, 0.3) # (p1, p2, p_meas)
 # noise_params=None # (p1, p2, p_meas)
-noise_params = (0.4, 0.6, 0.5)
+noise_params = (0.6, 0.4, 0.5)
 # -------------------------------
 # Load image
 # -------------------------------

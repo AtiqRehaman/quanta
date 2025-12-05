@@ -191,9 +191,20 @@ def process_image():
             print(traceback.format_exc())
             psnr_value, ssim_value = 0.0, 0.0
         
-        coincidences = sum(image == reconstructed)
-        total = color_cropped.size
-        coincidence_rate = coincidences / total
+        coincidence_rate = 0.0
+        try:
+            # Coincidence counter
+            coincidences = sum(image == reconstructed)
+            total = color_cropped.size
+            coincidence_rate = coincidences / total
+            fidelity = coincidence_rate * 100 if total > 0 else 0.0
+            print("Image Fidelity (Coincidence counter):", fidelity)
+        except ValueError:
+            # SSIM
+            ssim = psnr_ssim_plots(color_cropped, reconstructed)[-1]
+            total = color_cropped.size
+            fidelity = ssim * 100 if total > 0 else 0.0
+            print("Image Fidelity (SSIM):", fidelity)
 
         classical_size = count_nonzero(classical_image)
         quantum_size = count_nonzero(quantum_image)
@@ -242,10 +253,10 @@ def process_image():
         if exists(image_path):
             remove(image_path)
 
-# if __name__ == '__main__':
-#     app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
-if __name__ == "__main__":
-    from waitress import serve
-    print("Starting production server...")
-    serve(app, host="0.0.0.0", port=5000, threads=4)
+# if __name__ == "__main__":
+#     from waitress import serve
+#     print("Starting production server...")
+#     serve(app, host="0.0.0.0", port=5000, threads=4)

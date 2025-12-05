@@ -23,9 +23,9 @@ def plot_histogram(diff):
     plt.xlabel('Intensity')
     plt.ylabel('Frequency')
     plt.title('Histogram of Pixel Values')
-    # plt.savefig('histogram.png', dpi=300)
+    plt.savefig('histogram.png', dpi=300)
     # plt.show()
-    # plt.close()
+    plt.close()
     
 def error_heatmap(diff):
 
@@ -33,9 +33,9 @@ def error_heatmap(diff):
     plt.colorbar(label="Error Intensity")
     plt.title("Error Heatmap (Original vs Hybrid)")
     plt.axis("off")
-    # plt.savefig('heat_map.png', dpi=300, bbox_inches='tight')
+    plt.savefig('heat_map.png', dpi=300, bbox_inches='tight')
     # plt.show()
-    # plt.close()
+    plt.close()
 
 
 def block_mse(orig, recon, block_size=8):
@@ -98,7 +98,7 @@ def psnr_ssim_plots(color_cropped, reconstructed):
     plt.title("Quality Metrics")
     plt.ylabel("Value")
     plt.grid(True, axis='y')
-    # plt.savefig('psnr_ssim.png', dpi=300, bbox_inches='tight')
+    plt.savefig('psnr_ssim.png', dpi=300, bbox_inches='tight')
     plt.close()  # Close to free memory
     
     print(f"PSNR: {psnr_value} dB")

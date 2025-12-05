@@ -181,7 +181,7 @@ function Demo() {
       const uploadStart = Date.now();
       const res = await axios.post("http://127.0.0.1:5000/process_image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 500000, // 5 minutes
+        timeout: 700000, // 5 minutes
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setProgress(percentCompleted);
