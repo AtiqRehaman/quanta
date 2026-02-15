@@ -11,6 +11,8 @@ use('Agg')  # Use non-interactive backend
 import time
 import base64
 import traceback
+from threading import Lock
+from io import BytesIO
 
 # Assuming these modules are available
 from qiskit_aer import AerSimulator
@@ -30,11 +32,33 @@ from parallel_process import (
     transmit_blocks_in_parallel,
 )
 
-# Initialize helper and global objects at startup
+from superdense import simulate
+
 helper = Helper()
 backend = AerSimulator()
-nm = build_noise_model_ser(0.0)  # Default noise model
+nm = build_noise_model_ser(0.0)  # Default
 circuits = superdense_circuit_for_message()
+
+# Cache for noise models keyed by probability
+noise_model_cache = {0.0: nm}
+nm_lock = Lock()
+
+def get_noise_model(prob: float):
+    """Return a cached noise model for `prob` or build and cache it.
+
+    Rounds the probability to 3 decimal places to avoid tiny floating
+    point differences creating many cache entries.
+    """
+    key = round(float(prob), 3)
+    if key in noise_model_cache:
+        return noise_model_cache[key]
+    with nm_lock:
+        # double-check after acquiring lock
+        if key in noise_model_cache:
+            return noise_model_cache[key]
+        model = build_noise_model_ser(key)
+        noise_model_cache[key] = model
+        return model
 
 # Configuration
 UPLOAD_FOLDER = 'Uploads'
@@ -45,7 +69,6 @@ makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 CORS(app, resources={r"/process_image": {"origins": "http://localhost:3000"}})
-
 
 
 def allowed_file(filename):
@@ -75,9 +98,24 @@ def process_image():
         return jsonify({'error': 'Image file is required'}), 400
 
     file = request.files['image']
-    use_noise = request.form.get('use_noise') == 'true' or 'use_noise' in request.form
-    noise_percentage = request.form.get('noise_percentage', '0.3')
-    noise_prob = float(noise_percentage) if use_noise else 0.0
+    # Robust parsing of the `use_noise` form field.
+    # Frontend sends either the string 'true'/'false' (or may omit the field).
+    use_noise_raw = request.form.get('use_noise', 'false')
+    try:
+        use_noise_val = str(use_noise_raw).strip().lower()
+    except Exception:
+        use_noise_val = 'false'
+    use_noise = use_noise_val in ('1', 'true', 'yes', 'on')
+
+    # Only read noise percentage if noise is explicitly enabled
+    noise_prob = 0.0
+    if use_noise:
+        noise_percentage = request.form.get('noise_percentage', None)
+        if noise_percentage is not None:
+            try:
+                noise_prob = float(noise_percentage)
+            except Exception:
+                noise_prob = 0.0
 
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
@@ -90,8 +128,8 @@ def process_image():
     image_path = join(UPLOAD_FOLDER, filename)
     file.save(image_path)
 
-    # Use global nm by default, override if use_noise is True
-    current_nm = build_noise_model_ser(noise_prob)
+    # Use cached noise model (build only if needed)
+    current_nm = get_noise_model(noise_prob)
 
     try:
         # Load and process image
@@ -153,34 +191,41 @@ def process_image():
             quantum_reconstructed_blocks, image_shape=color_cropped.shape, block_size=block_size
         )
 
-        
-
         reconstructed = reconstruct_full_image(
             metadata_full, classical_image, quantum_image, block_size=block_size
         )
 
-        # Save images with reduced compression
-        classical_path = join(OUTPUT_FOLDER, 'meta_classical_transmission.png')
-        quantum_path = join(OUTPUT_FOLDER, 'meta_sdc_transmission.png')
-        reconstructed_path = join(OUTPUT_FOLDER, 'meta_reconstructed.png')
-        cv2.imwrite(classical_path, classical_image, [cv2.IMWRITE_PNG_COMPRESSION, 3])
-        cv2.imwrite(quantum_path, quantum_image, [cv2.IMWRITE_PNG_COMPRESSION, 3])
-        cv2.imwrite(reconstructed_path, reconstructed, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        # Keep images in memory using BytesIO (NO DISK I/O)
+        # Convert CV2 images to PNG in memory and encode to base64
+        _, classical_png = cv2.imencode('.png', classical_image, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        classical_b64 = base64.b64encode(classical_png.tobytes()).decode('utf-8')
+        
+        _, quantum_png = cv2.imencode('.png', quantum_image, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        quantum_b64 = base64.b64encode(quantum_png.tobytes()).decode('utf-8')
+        
+        _, reconstructed_png = cv2.imencode('.png', reconstructed, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+        reconstructed_b64 = base64.b64encode(reconstructed_png.tobytes()).decode('utf-8')
 
-        # Generate graphs
+        # Generate graphs in memory (NO DISK I/O)
         diff = cv2.absdiff(color_cropped, reconstructed)
         diff_gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
 
-        fig = plt.figure()
+        # Histogram - save to BytesIO
+        fig = plt.figure(figsize=(8, 6))
         plot_histogram(diff_gray)
-        histogram_path = join(OUTPUT_FOLDER, 'histogram.png')
-        plt.savefig(histogram_path, dpi=100, bbox_inches='tight')
+        histogram_io = BytesIO()
+        plt.savefig(histogram_io, format='png', dpi=100, bbox_inches='tight')
+        histogram_io.seek(0)
+        histogram_b64 = base64.b64encode(histogram_io.getvalue()).decode('utf-8')
         plt.close(fig)
 
-        fig = plt.figure()
+        # Heatmap - save to BytesIO
+        fig = plt.figure(figsize=(8, 6))
         error_heatmap(diff_gray)
-        heatmap_path = join(OUTPUT_FOLDER, 'heatmap.png')
-        plt.savefig(heatmap_path, dpi=100, bbox_inches='tight')
+        heatmap_io = BytesIO()
+        plt.savefig(heatmap_io, format='png', dpi=100, bbox_inches='tight')
+        heatmap_io.seek(0)
+        heatmap_b64 = base64.b64encode(heatmap_io.getvalue()).decode('utf-8')
         plt.close(fig)
 
         # Calculate metrics
@@ -198,41 +243,37 @@ def process_image():
             total = color_cropped.size
             coincidence_rate = coincidences / total
             fidelity = coincidence_rate * 100 if total > 0 else 0.0
-            print("Image Fidelity (Coincidence counter):", fidelity)
+            print("Image Fidelity:", fidelity) # Coincidence counter
         except ValueError:
             # SSIM
-            ssim = psnr_ssim_plots(color_cropped, reconstructed)[-1]
+            ssim = ssim_value
             total = color_cropped.size
             fidelity = ssim * 100 if total > 0 else 0.0
-            print("Image Fidelity (SSIM):", fidelity)
+            print("Image Fidelity:", fidelity) # SSIM
 
         classical_size = count_nonzero(classical_image)
         quantum_size = count_nonzero(quantum_image)
         metrics = {
-            'total_bit_pairs': len(all_bit_pairs),
-            'classical_image_size': classical_size,
-            'quantum_image_size': quantum_size,
+            # 'total_bit_pairs': len(all_bit_pairs),
+            # 'classical_image_size': classical_size,
+            # 'quantum_image_size': quantum_size,
             'psnr': psnr_value,
             'ssim': ssim_value,
-            'image_fidelity': coincidence_rate * 100,
+            'image_fidelity': fidelity,
         }
 
         end_time = time.time()
         processing_time = round(end_time - start_time, 2)
         print(f"Total processing time: {processing_time}s")
 
-        # Collect base64 images
-        images = []
-        for path, name in [
-            (classical_path, 'meta_classical_transmission.png'),
-            (quantum_path, 'meta_sdc_transmission.png'),
-            (reconstructed_path, 'meta_reconstructed.png'),
-            (heatmap_path, 'heatmap.png'),
-            (histogram_path, 'histogram.png'),
-        ]:
-            with open(path, "rb") as f:
-                img_data = base64.encodebytes(f.read()).decode("ascii")
-            images.append({'name': name, 'data': img_data})
+        # Collect base64 images (already encoded above, NO disk read needed!)
+        images = [
+            {'name': 'meta_classical_transmission.png', 'data': classical_b64},
+            {'name': 'meta_sdc_transmission.png', 'data': quantum_b64},
+            {'name': 'meta_reconstructed.png', 'data': reconstructed_b64},
+            {'name': 'heatmap.png', 'data': heatmap_b64},
+            {'name': 'histogram.png', 'data': histogram_b64},
+        ]
 
         # Return JSON with metrics, time, and images array
         response_data = {

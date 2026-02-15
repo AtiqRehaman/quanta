@@ -4,7 +4,7 @@ import os
 
 def folder_resize(data): #To resize multiple images make a folder 
     dimentions = tuple(map(int, input("Enter dimentions(Width x Height):").split()))
-    resized_folder = r"C:\Hybrid_Image\heat_map.png" #os.path.join(data ,"Resized")
+    resized_folder =  os.path.join(data ,"Resized")
     os.makedirs(resized_folder, exist_ok=True)
     print(f"Changing dimentions into (Width x Height) {dimentions}...")
     for file in os.listdir(data):
@@ -27,7 +27,7 @@ def file_resize(data): #To resize a image
     resized.save(data)
     print("Image resize completed.")
 
-data = r"C:\Hybrid_Image\heat_map.png"
+data = input("Enter the path of image or folder:")
 
 method = input("Enter a method(File or Folder):")
 if method.upper() == "FOLDER":

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import "./results.css";
 
 import img256 from "./assets/results/256_image.png";
-import img512 from "./assets/results/512_image.jpg";
+import img512 from "./assets/results/512_image.png";
 import img1024 from "./assets/results/1024_image.jpg";
 
 const results = [

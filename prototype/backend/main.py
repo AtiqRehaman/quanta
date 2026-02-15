@@ -19,13 +19,11 @@ from matplotlib import pyplot as plt
 
 helper = Helper()
 
-# -------------------------------
-# Main function
-# -------------------------------
-image_path = "prototype/backend/images/letter.jpg"
-# noise_params=(0.3, 0.2, 0.3) # (p1, p2, p_meas)
+# image_path = "./images/sample_cube_256.png"
+image_path = "./images/letter.jpg"
+noise_params=(0.5, 0.4, 0.4) # (p1, p2, p_meas)
 # noise_params=None # (p1, p2, p_meas)
-noise_params = (0.6, 0.4, 0.5)
+# noise_params = (0.6, 0.4, 0.5)
 # -------------------------------
 # Load image
 # -------------------------------
@@ -42,7 +40,7 @@ new_size = image_utils.aspect_size(image)
 # image = cv2.resize(image, new_size, interpolation=cv2.INTER_LANCZOS4)
 # gray = cv2.resize(gray, new_size, interpolation=cv2.INTER_LANCZOS4)
 
-block_size = 8
+block_size = 16
 h, w = gray.shape
 h_crop = h - h % block_size
 w_crop = w - w % block_size
@@ -56,7 +54,7 @@ color_blocks = view_as_blocks(color_cropped, block_shape=(block_size, block_size
 
 scores = image_utils.score_image(blocks)
 
-# Select top-k blocks (e.e.g., top 15%)
+# Select top-k blocks
 k = int(0.15 * len(scores))
 top_blocks = sorted(scores, reverse=True)[:k]
 
@@ -64,7 +62,8 @@ classical_image = image_utils.mask_classical_blocks(color_cropped, top_blocks, b
 
 quantum_image = np.zeros_like(color_cropped, dtype=np.uint8)
 if noise_params is not None:
-    nm = super_dense.build_noise_model(*noise_params)
+    # nm = super_dense.build_noise_model(*noise_params)
+    nm = super_dense.build_noise_model_ser(prob=0.3)
 else:
     nm = None
 
@@ -90,7 +89,7 @@ metadata_full = metadata.metadata(blocks, top_blocks, block_size=block_size)
 
 
 # Simulate SDC for all bit pairs at once
-print(f"Total bit pairs to transmit: {len(all_bit_pairs)}")
+# print(f"Total bit pairs to transmit: {len(all_bit_pairs)}")
 # received_bit_pairs = super_dense.transmit_bit_pairs(
 #     all_bit_pairs, circuits=circuits, noise_model=nm, backend=backend
 # )
@@ -105,7 +104,7 @@ received_bit_pairs = parallel_process.transmit_blocks_in_parallel(
     shots_per_pair=100, n_jobs=4, batch_size=batch_size
 )
 
-print(f"Received bit pairs: {len(received_bit_pairs)}")
+# print(f"Received bit pairs: {len(received_bit_pairs)}")
 end_time = time.time()
 time_diff = end_time - start_time
 minutes = time_diff / 60
@@ -150,14 +149,17 @@ cv2.imwrite('meta_sdc_transmission.png', quantum_image)
 cv2.imwrite('meta_reconstructed.png', reconstructed)
 
 
-print(f"Classical image size:{np.count_nonzero(classical_image)}")
-print(f"Quantum image size:{np.count_nonzero(quantum_image)}")
+# print(f"Classical image size:{np.count_nonzero(classical_image)}")
+# print(f"Quantum image size:{np.count_nonzero(quantum_image)}")
 print("Hybrid transmission simulated and image reconstructed successfully.")
 
 diff = cv2.absdiff(color_cropped, reconstructed)
 diff_gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
 plotting.plot_histogram(diff_gray)
+plt.savefig('error_histogram.png', dpi=300, bbox_inches='tight')
 plotting.error_heatmap(diff_gray)
+plt.savefig('error_heatmap.png', dpi=300, bbox_inches='tight')
+plotting.psnr_ssim_plots(color_cropped, reconstructed)
 
 try:
     # Coincidence counter
@@ -165,13 +167,13 @@ try:
     total = color_cropped.size
     coincidence_rate = coincidences / total
     fidelity = coincidence_rate * 100 if total > 0 else 0.0
-    print("Image Fidelity (Coincidence counter):", fidelity)
+    print("Image Fidelity:", fidelity) # Coincidence counter
 except ValueError:
     # SSIM
     ssim = plotting.psnr_ssim_plots(color_cropped, reconstructed)[-1]
     total = color_cropped.size
     fidelity = ssim * 100 if total > 0 else 0.0
-    print("Image Fidelity (SSIM):", fidelity)
+    print("Image Fidelity:", fidelity) # SSIM
     
 
 # plotting.plot_bandwidth_scaling([256, 512, 1024, 2048], block_size=16, entropy_fraction=0.15)

@@ -1,7 +1,3 @@
-# -------------------------------
-# Generate Metadata
-# -------------------------------
-
 def metadata(blocks, top_blocks, block_size=16):
 
     metadata = []

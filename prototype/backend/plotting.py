@@ -19,23 +19,25 @@ plt.rcParams.update({
 
 
 def plot_histogram(diff):
-    plt.hist(diff.flatten(), bins=50, color='b', alpha=0.7)
-    plt.xlabel('Intensity')
-    plt.ylabel('Frequency')
+    plt.figure()
+    plt.hist(diff.flatten(), bins=256, color='b', alpha=0.7)
+    plt.xlabel('Pixel Difference')
+    plt.ylabel('Frequency(log)')
+    plt.yscale('log')
     plt.title('Histogram of Pixel Values')
-    plt.savefig('histogram.png', dpi=300)
-    # plt.show()
-    plt.close()
+    # plt.savefig('histogram.png', dpi=300)
+    # # plt.show()
+    # plt.close()
     
 def error_heatmap(diff):
-
-    plt.imshow(diff, cmap="hot", vmin=0, vmax=50)
-    plt.colorbar(label="Error Intensity")
-    plt.title("Error Heatmap (Original vs Hybrid)")
+    plt.figure()
+    plt.imshow(diff, cmap="inferno", vmin=0, vmax=50)
+    plt.colorbar(label="Absolute Pixel Wise Error")
+    plt.title("Error Heatmap (Original vs Reconstructed)")
     plt.axis("off")
-    plt.savefig('heat_map.png', dpi=300, bbox_inches='tight')
+    # plt.savefig('heat_map.png', dpi=300, bbox_inches='tight')
     # plt.show()
-    plt.close()
+    # plt.close()
 
 
 def block_mse(orig, recon, block_size=8):
@@ -61,8 +63,9 @@ def psnr_ssim_plots(color_cropped, reconstructed):
     # Calculate PSNR safely to avoid divide-by-zero warnings
     # Compute MSE over all channels
     mse = np.mean((color_cropped.astype(np.float64) - reconstructed.astype(np.float64)) ** 2)
+    print(f"MSE: {mse}")
     if mse == 0:
-        psnr_value = float(100.0)  # Perfect match
+        psnr_value = float(80.0)
     else:
         psnr_value = 10 * np.log10((255.0 ** 2) / mse)
     

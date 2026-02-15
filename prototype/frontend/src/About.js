@@ -44,7 +44,7 @@ It optimizes bandwidth and enhances reliability.`
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 6, backgroundColor: "#f5f7fa79", minHeight: "100vh" }}>
+    <Container maxWidth="md" sx={{ py: 6, backgroundColor: "#0000001e", minHeight: "100vh" }}>
       <Box sx={{ mb: 10, textAlign: "center" }}>
         <Typography variant="h2" sx={{ fontWeight: 700, color: "#d21919ff" }}>
           About Our Project
@@ -93,7 +93,7 @@ It optimizes bandwidth and enhances reliability.`
                       mt: 2,
                       color: "#444",
                       flexGrow: 1,
-                      textAlign: card.title === "Proposed Solution" ? "left" : "inherit", // Left align for Proposed Solution
+                      textAlign: card.title === "Proposed Solution" ? "left" : "inherit", 
                     }}
                   >
                     {card.title === "Proposed Solution" ? (

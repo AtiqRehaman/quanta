@@ -90,7 +90,7 @@ def superdense_qiskit(bits: str, shots: int = 1024, noise=False):
 
   return qc, counts, state, rho
 
-@app.route('/api/simulate', methods=['GET'])
+# @app.route('/api/simulate', methods=['GET'])
 def simulate():
     try:
         message = request.args.get('message', '00')
